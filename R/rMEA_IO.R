@@ -19,8 +19,9 @@
 #'   filenames and correctly label the cases. The strings can be abbreviated.
 #'   If the filenames contains other data the character "x" can be used to skip a position.
 #'   If NA, no attempt to identify cases will be done.
-#' @param idSep If idOrder is not NA, this character will be used as separator between "id", "session", and "group"
-#' information in the filenames.
+#' @param idSep character vector (or object which can be coerced to such) containing regular expression(s).
+#'   If idOrder is not NA, this will be used as separator to split the filenames and identify "id", "session", and "group"
+#'   informations.
 #' @param removeShortFiles Either NULL or an number ranging from 0 to 1.
 #'  Specifies the proportion of the average file length below which a file should be excluded.
 #'  (E.g. a value of 0.7 will exclude all files with a duration smaller than 70\% of the mean duration of all other files in the directory.)
@@ -191,11 +192,11 @@ readMEA = function(
   }, lf, seq_along(lf))
 
 
-  #check if any MEA is > 10sd
+  #check if any na.omit MEA is > 10sd
   Map(function(x,i){
     myDat = c(x$s1,x$s2)
-    mySD = stats::sd(myDat)
-    if(any(myDat > 10*mySD))
+    mySD = stats::sd(myDat, na.rm = T)
+    if(any(stats::na.omit(myDat) > 10*mySD))
       warning( round(length(myDat[myDat > 10*mySD])/length(myDat)*100,2) ,"% of the data was higher than 10 standard deviations in dyad: ",dyadIds[[i]], ", session: ",sess[[i]],", group:",group[[i]], ". Check the raw data!", call. = F)
   },lf,seq_along(lf))
 
@@ -239,17 +240,6 @@ readMEA = function(
         )
   }, lf, seq_along(lf))
   names(experiment) = mapply(paste,group,dyadIds,sess, MoreArgs=list(sep="_"))
-
-    # class(experiment) = c("MEAlist",class(experiment))
-    # attributes(experiment) = c(attributes(experiment), list(
-    #   nId = length(unique(unlist(dyadIds))),
-    #   n = nFiles,
-    #   groups = unique(unlist(group)),
-    #   sampRate = sampRate,
-    #   s1Name = s1Name,
-    #   s2Name = s2Name
-    # ))
-
   return(MEAlist(experiment))
 
 }

@@ -10,7 +10,7 @@
 #' This function recombines the s1 and s2 motion energy time-series between all \code{MEA} objects in the supplied list.
 #' It is typically used to compare genuine synchrony of real data with pseudosynchrony of shuffled (recombined) data.
 #'
-#' @param mea an object of class \code{MEAlist} (see function \code{\link{readMEA}}).
+#' @param mea a list of \code{MEA} objects (see function \code{\link{readMEA}}).
 #' @param size integer. The number of combinations to be returned.
 #'
 #' @details The shuffling process first creates all possible combinations between s1 and s2 of all \code{MEA} objects in the supplied list,
@@ -35,11 +35,8 @@
 #' @export
 #'
 shuffle = function(mea, size) {
-  #if(any(!sapply(mea, is.MEA)))
-  if(!is.MEAlist(mea))
-    stop("This function accepts only MEAlist objects. Please use readMEA() to import files")
 
-  lrfn = mea
+  lrfn = MEAlist(mea)
   cat("\r\nShuffling dyads:\r\n")
 
 
@@ -48,10 +45,10 @@ shuffle = function(mea, size) {
     lapply(lrfn, function(x) { x$MEA[,1] }),
     lapply(lrfn, function(x) { x$MEA[,2] })
   )
+  #build names containing the original info
   names(ll)[1:(length(ll)/2)] = paste(names(ll)[1:(length(ll)/2)],substr(attr(mea,"s1Name"),1,3) ,sep="_")
   names(ll)[(length(ll)/2+1):length(ll)] = paste(names(ll)[(length(ll)/2+1):length(ll)],substr(attr(mea,"s2Name"),1,3),sep="_")
-  percs = sapply(mea,function(x){attr(x,"s1_%_movement")})
-  percs = c(percs,sapply(mea,function(x){attr(x,"s2_%_movement")}) )
+
   # calcola le possibili combinazioni ed estendi la lista con le pseudo-diadi
   combo = utils::combn(1:length(ll),2)
   #remove real combination
@@ -67,11 +64,11 @@ shuffle = function(mea, size) {
 
   res = lapply(1:n_boot, function(i){
     prog(i,n_boot)
-    res = stats::na.omit(unequalCbind(ll[[com[i,1]]], ll[[com[i,2]]]))
+    res = stats::na.omit(unequalCbind(ll[[com[i,1]]], ll[[com[i,2]]], keep=FALSE))
     colnames(res) = c(attr(mea,"s1Name"),attr(mea,"s2Name"))
     MEA(res, sampRate=attr(mea,"sampRate"), id=lead0(i,4),
         session="1", group="random", s1Name="s1Random", s2Name="s2Random",
-        filter = attr(mea,"filter")
+        filter = attr(mea,"filter"), uid = paste(names(ll)[com[i,1]],names(ll)[com[i,2]],sep="_|_")
         )
 
   })

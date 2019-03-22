@@ -1,19 +1,32 @@
 
+#' Cohen's d
+#' A simple function to calculate Cohen's d effect size
+#' @param x,y two numeric vectors containing the scores of the two samples
+#'
+#' @export
+#'
+#' @examples
+#' # Generates two samples with means distance of 1 sd
+#' x = rnorm(1000, mean = 10, sd = 1.5)
+#' y = rnorm(1000, mean = 11.5, sd = 1.5)
+#' # cohen's d should approximate to 1
+#' cohens_d(x,y)
 cohens_d <- function(x, y) {
+  if(!is.numeric(x) || !is.numeric(y)) stop ("'x' and 'y' must be numeric vectors")
   lx <- length(x)- 1
   ly <- length(y)- 1
   md  <- abs(mean(x) - mean(y))        ## mean difference (numerator)
   csd <- lx * stats::var(x) + ly * stats::var(y)
   csd <- csd/(lx + ly)
   csd <- sqrt(csd)                     ## common sd computation
-
   cd  <- md/csd                        ## cohen's d
+  cd
 }
 
 
-
 ## binds unequal columns to a same data.frame padding NAs to the end of the shorter
-unequalCbind = function(...) {
+## (if keep=T, else drops the unmatched rows from the longer)
+unequalCbind = function(..., keep=TRUE) {
   dots <- list(...)
   #debug
   #dots = list(my.orig,my.ccf)
@@ -24,7 +37,10 @@ unequalCbind = function(...) {
     if(is.null(dim(x))) {
       k = data.frame(x)
       colnames(k)=paste0("x",i)
-    } else k = x
+    } else {
+      k = x
+      colnames(k)=ifelse(is.null(colnames(x)),paste0("x",i),colnames(x))
+      }
     k
     },dots, seq_along(dots))
 
@@ -32,19 +48,26 @@ unequalCbind = function(...) {
   if(length(dots)>1){
     dotsNames = unlist(sapply(dots,colnames))
     #print(dotsNames)
-    maxlen = max(sapply(dots, nrow))
-    fdots = lapply(dots, function(x){
-      #deb
-      #x= dots[[2]]
-      #rm(x,y,fdots,dots,pad,maxlen)
-      if(nrow(x)<maxlen){
-        pad = maxlen - nrow(x)
-        y = data.frame(matrix(rep(NA,ncol(x)*pad),ncol = ncol(x)))
-        colnames(y) = colnames(x)
-        rownames(y) = paste0("NA",1:pad)
-        rbind(x,y)
-      } else x
-    })
+    if(keep){
+      maxlen = max(sapply(dots, nrow))
+      fdots = lapply(dots, function(x){
+        #deb
+        #x= dots[[2]]
+        #rm(x,y,fdots,dots,pad,maxlen)
+        if(nrow(x)<maxlen){
+          pad = maxlen - nrow(x)
+          y = data.frame(matrix(rep(NA,ncol(x)*pad),ncol = ncol(x)))
+          colnames(y) = colnames(x)
+          rownames(y) = paste0("NA",1:pad)
+          rbind(x,y)
+        } else x
+      })
+    } else {
+      minlen = min(sapply(dots, nrow))
+      fdots = lapply(dots, function(x){
+        x[1:minlen,]
+      })
+    }
     res = data.frame(do.call("cbind",fdots))
     colnames(res) = dotsNames
     #print(colnames(res))

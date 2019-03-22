@@ -2,12 +2,12 @@
 % Please edit documentation in R/rMEA_ccf.R
 \name{MEAccf}
 \alias{MEAccf}
-\title{Moving-windows lagged cross-correlation routine for \code{MEA} and \code{MEAlist} objects}
+\title{Moving-windows lagged cross-correlation routine for \code{MEA} objects}
 \usage{
 MEAccf(mea, lagSec, winSec, incSec, r2Z = T, ABS = T)
 }
 \arguments{
-\item{mea}{an object of class \code{MEA} or \code{MEAlist} (see function \code{\link{readMEA}})}
+\item{mea}{an object of class \code{MEA} or a list of \code{MEA} objects (see function \code{\link{readMEA}})}
 
 \item{lagSec}{an integer specifying the maximum number of lags (in seconds) for which the time-series will be shifted forwards and backwards.}
 
@@ -15,7 +15,7 @@ MEAccf(mea, lagSec, winSec, incSec, r2Z = T, ABS = T)
 
 \item{incSec}{an integer specifying the step size (in seconds) between successive windows. Values lower than \code{winSec} result in overlapping windows.}
 
-\item{r2Z}{logical. The default value TRUE applies Fisher's r to Z transformation to all computed correlations.}
+\item{r2Z}{logical. The default value TRUE applies Fisher's r to Z transformation (inverse hyperbolic tangent function) to all computed correlations.}
 
 \item{ABS}{logical. The default value TRUE transforms the (Fisher's Z-transformed) correlations to absolute values.}
 }
@@ -25,7 +25,7 @@ The function returns a copy of the \code{mea} object which includes a cross-corr
 \description{
 This function analyzes a bivariate MEA signal represented by two time-series (subject 1 "s1", subject 2 "s2") resulting from a dyadic interaction.
 MEAccf performs windowed cross-correlations with specified increments. The cross-correlation analysis is repeated for each
-lag step, with discrete increments of 1 second in both directions.
+lag step, with discrete increments of 1 sample in both directions.
 }
 \details{
 The choice of \code{lagSec} depends on the type of synchronization expected from the specific interaction. In the literature, lags of ±5 seconds have been reported by multiple authors.
