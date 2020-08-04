@@ -4,7 +4,7 @@
 \alias{MEAlagplot}
 \title{Plots the average cross-correlation at different lags}
 \usage{
-MEAlagplot(mea, contrast = F, by.group = T, ...)
+MEAlagplot(mea, contrast = F, by.group = T, sub.line = 0.5, ...)
 }
 \arguments{
 \item{mea}{a list of \code{MEA} objects (see function \code{\link{MEAlist}}).}
@@ -13,7 +13,9 @@ MEAlagplot(mea, contrast = F, by.group = T, ...)
 
 \item{by.group}{logical. Should the different groups of \code{mea} be plotted separately?}
 
-\item{...}{further arguments and \code{\link[graphics]{par}} parameters passed to \code{\link[graphics]{plot}}}
+\item{sub.line}{on which margin line should the 'social presence' subtitle be printed, starting at 0 counting outwards.}
+
+\item{...}{further arguments and \code{\link[graphics]{par}} parameters passed to \code{\link[base]{plot}}}
 }
 \description{
 Provides a graphical representation of the comparison between two lists of \code{MEA} objects.
