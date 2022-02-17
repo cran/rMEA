@@ -80,9 +80,11 @@ MEAccf.MEAlist = function(mea, lagSec, winSec, incSec, r2Z=T, ABS=T) {
 MEAccf.MEA = function(mea, lagSec, winSec, incSec, r2Z=T, ABS=T){
   ####debug
   # mea = mearaw[[1]]
-  # lagSec = 5
-  # winSec = 15
-  # incSec = 15
+  # mea = x[[1]]
+  #
+  # lagSec = 3
+  # winSec = 30
+  # incSec = 30
   # ################
 
   #import C correlation function
@@ -105,6 +107,10 @@ MEAccf.MEA = function(mea, lagSec, winSec, incSec, r2Z=T, ABS=T){
   #if(winSec!=incSec) warning("With overlapping windows, the sync series has to be shifted forward by half window in order to be aligned to the original signal!\r\n")
   iFile = mea$MEA
   n_win = ceiling((nrow(iFile)-win-lagSamp+1)/inc) #calcola il numero di finestre per ciascun file
+  if(n_win == 0){
+    stop("The chosen lagSec, winSec, and incSec combination was too long to find a single full window in session: ", attr(mea,"uid") )
+  }
+
   lcc=lapply(seq_len(n_win)-1, function(iWin)
   { #-----per ciascuna finestra--------
     ab = (iWin*inc +1):(iWin*inc +win+lagSamp) #calcola il range di sample di ciascuna finestra
@@ -142,19 +148,35 @@ MEAccf.MEA = function(mea, lagSec, winSec, incSec, r2Z=T, ABS=T){
   timex = data.frame(start=startx, end=endx)
   rownames(timex) = paste0("w",seq_len(n_win))
 
+
   # analytics
-  ccfRes = list(
-    "all_lags" = apply(ccfmat, 1, mean ,na.rm=T),
-    "s1_lead"  = apply(ccfmat[, (lagSec*sampRate+2):(lagSec*sampRate*2+1)], 1, mean ,na.rm=T),
-    "s2_lead"  = apply(ccfmat[, 1:lagSec*sampRate], 1, mean ,na.rm=T),
-    "lag_zero"  = ccfmat[, lagSec*sampRate+1],
-    "s1_lead_0" = apply(ccfmat[, (lagSec*sampRate+1):(lagSec*sampRate*2+1)], 1, mean ,na.rm=T),
-    "s2_lead_0" = apply(ccfmat[, 1:(lagSec*sampRate +1)], 1, mean ,na.rm=T),
-    "bestLag" = apply(ccfmat, 1,  function(r){best = which.max(r); ifelse(length(best)!=0,as.numeric(gsub("lag","", names(best))), NA) }), #this may require a smoothing function
-    "grandAver" = mean(unlist(ccfmat),na.rm=T),
-    "winTimes"  = timex
-  )
+  if(lagSec>0) {
+    ccfRes = list(
+      "all_lags" = apply(ccfmat, 1, mean ,na.rm=T),
+      "s1_lead"  = apply(ccfmat[, (lagSec*sampRate+2):(lagSec*sampRate*2+1)], 1, mean ,na.rm=T),
+      "s2_lead"  = apply(ccfmat[, 1:(lagSec*sampRate)], 1, mean ,na.rm=T),
+      "lag_zero"  = ccfmat[, lagSec*sampRate+1],
+      "s1_lead_0" = apply(ccfmat[, (lagSec*sampRate+1):(lagSec*sampRate*2+1)], 1, mean ,na.rm=T),
+      "s2_lead_0" = apply(ccfmat[, 1:(lagSec*sampRate +1)], 1, mean ,na.rm=T),
+      "bestLag" = apply(ccfmat, 1,  function(r){best = which.max(r); ifelse(length(best)!=0,as.numeric(gsub("lag","", names(best))), NA) }), #this may require a smoothing function
+      "grandAver" = mean(unlist(ccfmat),na.rm=T),
+      "winTimes"  = timex
+    )
+  } else {
+    ccfRes = list(
+      "all_lags" = apply(ccfmat, 1, mean ,na.rm=T),
+      "s1_lead"  = NULL,
+      "s2_lead"  = NULL,
+      "lag_zero"  = ccfmat[, lagSec*sampRate+1],
+      "s1_lead_0" = NULL,
+      "s2_lead_0" = NULL,
+      "bestLag" = apply(ccfmat, 1,  function(r){best = which.max(r); ifelse(length(best)!=0,as.numeric(gsub("lag","", names(best))), NA) }), #this may require a smoothing function
+      "grandAver" = mean(unlist(ccfmat),na.rm=T),
+      "winTimes"  = timex
+    )
+  }
   names(ccfRes$zero) = names(ccfRes$pace)
+
 
   filter = "CCF"
   if(r2Z) filter = paste0("z",filter)
@@ -168,6 +190,8 @@ MEAccf.MEA = function(mea, lagSec, winSec, incSec, r2Z=T, ABS=T){
                           n_win = n_win)
   mea$ccf = ccfmat
   mea$ccfRes = ccfRes
+
+
 
   #debug
   # cat("\r\n",mea$ccf[1:10,10])

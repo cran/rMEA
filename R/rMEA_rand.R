@@ -12,6 +12,8 @@
 #'
 #' @param mea a list of \code{MEA} objects (see function \code{\link{readMEA}}).
 #' @param size either "max" or an integer specifying the number of combinations to be returned.
+#' @param keepRoles Boolean. If TRUE the resulting random dyad will preserve the roles, i.e. they will all have a new s1 sampled among all
+#' s1s and a new s2 sampled among all s2s. If FALSE (default), the role will be disregared.
 #'
 #' @details The shuffling process first creates all possible combinations between s1 and s2 of all \code{MEA} objects in the supplied list,
 #' then removes the original pairings, and finally extracts the desired numbers of dyads without replacement.
@@ -34,7 +36,7 @@
 #'summary(mea_rand)
 #' @export
 #'
-shuffle = function(mea, size="max") {
+shuffle = function(mea, size="max", keepRoles=FALSE) {
 
   lrfn = MEAlist(mea)
   cat("\r\nShuffling dyads:\r\n")
@@ -51,9 +53,19 @@ shuffle = function(mea, size="max") {
 
   # calcola le possibili combinazioni ed estendi la lista con le pseudo-diadi
   combo = utils::combn(1:length(ll),2)
+
   #remove real combination
   comborem = unlist(lapply(seq_along(lrfn), function(i){which(combo[1,] == i & combo[2,] == i+length(lrfn))}))
   combo = combo[,-comborem]
+
+  #per request of thekryz on github
+  if(keepRoles){
+    comborem = c(
+                  which(combo[1,] <= length(lrfn) & combo[2,] <= length(lrfn)), #dove s1 <-> s1
+                  which(combo[1,] > length(lrfn) & combo[2,] > length(lrfn))
+                )
+    combo = combo[,-comborem]
+  }
   if (size=="max" || length(combo)/2 <=size) {
     com = data.frame(t(combo))
   } else {
@@ -73,6 +85,18 @@ shuffle = function(mea, size="max") {
 
   })
   cat('\r\n',n_boot,"/",length(combo)/2,"possible combinations were randomly selected")
+
+  #debug comborem using demo data
+  # x =   MEAlist(res)
+  # x = names(x)
+  # x = gsub('normal_20','',x,fixed = T)
+  # x = gsub('_1_P','P',x,fixed = T)
+  # x = gsub('_1_T','T',x,fixed = T)
+  # x = gsub('_|_',' | ',x,fixed = T)
+  # x = gsub('The','_S2',x,fixed = T)
+  # x = gsub('Pat','_S1',x,fixed = T)
+  # data.frame(x)
+
   MEAlist(res)
 
 }
@@ -112,45 +136,46 @@ shuffle = function(mea, size="max") {
 #' @export
 #'
 shuffle_segments = function(mea, n_each, segSec){
-  sr = sampRate(mea)
-  RES = list()
-
-  for(i in 1:n_each) {
-    sinkChar = if(.Platform$OS.type=="unix") "/dev/null" else "NUL"
-    sink(sinkChar) #suppress meamap prog
-    res = MEAmap(mea, function(x){
-      #setup
-      seg = sr*segSec
-      nseg = floor(nrow(x)/seg)
-      startx = (seq_len(nseg)-1)*seg +1
-      endx = (seq_len(nseg))*seg
-      #generate random segment order avoiding real matchings
-      ran1 = ran2 = 1:nseg
-      while(sum(ran1 == ran2 )>0){
-      ran1 = sample(ran1)
-      ran2 = sample(ran2)
-      }
-      val1 = val2 = numeric(nrow(x))
-      # str(x)
-      for(i in 1:nseg){
-        # cat("\r\n",startx[i],endx[i], "-->", startx[ran1[i]],endx[ran1[i]])
-        val1[startx[i]:endx[i]] = startx[ran1[i]]:endx[ran1[i]]
-        val2[startx[i]:endx[i]] = startx[ran2[i]]:endx[ran2[i]]
-      }
-      x = x[1:(seg*nseg),]
-      x[[1]] = x[[1]][val1]
-      x[[2]] = x[[2]][val2]
-      x
-    },
-    label="segment shuffle")
-    res = setGroup(res, "shuffled")
-    names(res) = paste0(names(res),"_R",i)
-    sink()
-    RES = c(RES,res)
-    prog(i,n_each)
-  }
-  RES = lapply(RES, function(x){x["ccf"]= list(NULL);x["ccfRes"]= list(NULL);x})
-  RES = MEAlist(RES)
-  RES = RES[sort(names(RES))]
-  RES
+  message("NOTE: This function was not behaving as expected and has been temporarily disabled until fixed. A similar computation of this algorithm can be found on https://embodiment.ch/research/synchrony-computation.html")
+  # sr = sampRate(mea)
+  # RES = list()
+  #
+  # for(i in 1:n_each) {
+  #   sinkChar = if(.Platform$OS.type=="unix") "/dev/null" else "NUL"
+  #   sink(sinkChar) #suppress meamap prog
+  #   res = MEAmap(mea, function(x){
+  #     #setup
+  #     seg = sr*segSec
+  #     nseg = floor(nrow(x)/seg)
+  #     startx = (seq_len(nseg)-1)*seg +1
+  #     endx = (seq_len(nseg))*seg
+  #     #generate random segment order avoiding real matchings
+  #     ran1 = ran2 = 1:nseg
+  #     while(sum(ran1 == ran2 )>0){
+  #     ran1 = sample(ran1)
+  #     ran2 = sample(ran2)
+  #     }
+  #     val1 = val2 = numeric(nrow(x))
+  #     # str(x)
+  #     for(i in 1:nseg){
+  #       # cat("\r\n",startx[i],endx[i], "-->", startx[ran1[i]],endx[ran1[i]])
+  #       val1[startx[i]:endx[i]] = startx[ran1[i]]:endx[ran1[i]]
+  #       val2[startx[i]:endx[i]] = startx[ran2[i]]:endx[ran2[i]]
+  #     }
+  #     x = x[1:(seg*nseg),]
+  #     x[[1]] = x[[1]][val1]
+  #     x[[2]] = x[[2]][val2]
+  #     x
+  #   },
+  #   label="segment shuffle")
+  #   res = setGroup(res, "shuffled")
+  #   names(res) = paste0(names(res),"_R",i)
+  #   sink()
+  #   RES = c(RES,res)
+  #   prog(i,n_each)
+  # }
+  # RES = lapply(RES, function(x){x["ccf"]= list(NULL);x["ccfRes"]= list(NULL);x})
+  # RES = MEAlist(RES)
+  # RES = RES[sort(names(RES))]
+  # RES
 }
